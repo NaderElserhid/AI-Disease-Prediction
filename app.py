@@ -11,7 +11,13 @@ MLB_PATH = "mlb.pkl"
 LE_PATH = "label_encoder.pkl"
 VOCAB_PATH = "symptom_vocab.json"
 
-@st.cache_resource
+try:
+    cache_resource = st.cache_resource          # new API
+except AttributeError:
+    cache_resource = lambda **kw: st.cache(allow_output_mutation=True)
+
+
+@cache_resource
 def load_artifacts():
     model = joblib.load(MODEL_PATH)
     mlb = joblib.load(MLB_PATH)
@@ -19,6 +25,7 @@ def load_artifacts():
     with open(VOCAB_PATH, "r", encoding="utf8") as f:
         vocab = json.load(f)
     return model, mlb, le, vocab
+
 
 def main():
     st.set_page_config(page_title="Disease Prediction", layout="centered")
@@ -53,7 +60,8 @@ def main():
         # fuzzy map tokens to vocab
         mapped = fuzzy_map_input_to_vocab(tokens, vocab, cutoff=0.6)
         # Combine with checked
-        final_symptoms = list(dict.fromkeys(checked + mapped))  # preserve order unique
+        # preserve order unique
+        final_symptoms = list(dict.fromkeys(checked + mapped))
         st.write("Girdi belirtiler (interpreted):", final_symptoms)
 
         # transform to mlb vector
@@ -72,6 +80,7 @@ def main():
 
         # small note
         st.info("Bu sistem yalnızca eğitildiği veriye göre tahmin yapar. Gerçek tıbbi teşhis yerine kullanılmamalıdır.")
+
 
 if __name__ == "__main__":
     main()
